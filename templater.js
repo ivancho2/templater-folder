@@ -1,24 +1,44 @@
+// Execute this script for make a template folder and a files
+// -- node templater.js
+
 // TODO: refactor code
 // NOT SUPPORT FOR [ '-' ] INTO NAME FILE/FOLDERS
 
-const fs = require("fs");
-const path = require("path");
+const fs = require('fs');
+const path = require('path');
+const typeSplit =
+  process.platform.includes('win32') || process.platform.includes('win64')
+    ? '\\'
+    : '/';
 const folderStructure = `
-/folder whith spaces
 /src
--/assets
---/images
----.gitkeep
 -/common
---.gitkeep
--/components
---.gitkeep
--/constants
---.gitkeep
--/styles
 --.gitkeep
 -/utils
 --.gitkeep
+-/assets
+--/images
+---.gitkeep
+--/fonts
+---.gitkeep
+-/components
+--/atoms
+---.gitkeep
+--/molecules
+---.gitkeep
+--/organisms
+---.gitkeep
+--/templates
+---.gitkeep
+-/constants
+--.gitkeep
+-/styles
+--colors.js
+--variables.js
+--mixins.js
+-/environments
+--.env.dev
+--.env.pdn
 `
   .split(/\n/)
   .slice(1, -1);
@@ -27,7 +47,6 @@ linesIterator(
   folderStructure[0].trim(),
   folderStructure.slice(1),
   path.join(__dirname),
-  0
 );
 
 function linesIterator(current, iterator, depthPath) {
@@ -44,12 +63,12 @@ function linesIterator(current, iterator, depthPath) {
   // nested element?
   if (depthCalc(current) < depthCalc(next)) {
     try {
-      fs.mkdir(`${depthPath}\\${getName(current)}`, (error) => {
+      fs.mkdir(`${depthPath}${typeSplit}${getName(current)}`, error => {
         handleError(error);
         return linesIterator(
           next,
           iterator.slice(1),
-          `${depthPath}\\${getName(current)}`
+          `${depthPath}${typeSplit}${getName(current)}`,
         );
       });
     } catch (error) {
@@ -58,7 +77,7 @@ function linesIterator(current, iterator, depthPath) {
   } else {
     if (isFolder(current)) {
       try {
-        fs.mkdir(`${depthPath}\\${getName(current)}`, (error) => {
+        fs.mkdir(`${depthPath}${typeSplit}${getName(current)}`, error => {
           handleError(error);
         });
       } catch (error) {
@@ -66,9 +85,13 @@ function linesIterator(current, iterator, depthPath) {
       }
     } else {
       try {
-        fs.appendFile(`${depthPath}\\${getName(current)}`, "", (error) => {
-          if (error) throw error;
-        });
+        fs.appendFile(
+          `${depthPath}${typeSplit}${getName(current)}`,
+          '',
+          error => {
+            if (error) throw error;
+          },
+        );
       } catch (error) {
         throw error;
       }
@@ -79,9 +102,9 @@ function linesIterator(current, iterator, depthPath) {
       depthCalc(current) > depthCalc(next)
         ? `${depthPathDecrease(
             depthPath,
-            depthCalc(current) - depthCalc(next)
+            depthCalc(current) - depthCalc(next),
           )}`
-        : `${depthPath}`
+        : `${depthPath}`,
     );
   }
 }
@@ -89,7 +112,11 @@ function linesIterator(current, iterator, depthPath) {
 function depthPathDecrease(pathToDecrease, iterations) {
   while (iterations > 0) {
     --iterations;
-    pathToDecrease = pathToDecrease.split("\\").slice(0, -1).join("\\");
+
+    pathToDecrease = pathToDecrease
+      .split(typeSplit)
+      .slice(0, -1)
+      .join(typeSplit);
   }
   return pathToDecrease;
 }
@@ -109,11 +136,11 @@ function getName(line) {
 
 function handleError(error) {
   if (error) {
-    if (error.code === "EEXIST") {
+    if (error.code === 'EEXIST') {
       // https://stackoverflow.com/questions/9781218/how-to-change-node-jss-console-font-color
       // https://en.wikipedia.org/wiki/ANSI_escape_code#Colors
       console.log(
-        `\x1b[94mINFO:\x1b[m '${error.path}' \x1b[33malready exist\x1b[m`
+        `\x1b[94mINFO:\x1b[m '${error.path}' \x1b[33malready exist\x1b[m`,
       );
     } else {
       throw error;
